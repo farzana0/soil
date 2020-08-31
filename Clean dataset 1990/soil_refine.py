@@ -57,6 +57,7 @@ from imputer import impute
 from sklearn.model_selection import StratifiedKFold
 from sklearn.feature_selection import RFECV
 import csv
+from functools import reduce
 
 
 
@@ -929,9 +930,6 @@ def extratree(X, Y, target, columns):
 		r2score.append(r2_score(y_test, y_pred))
 	regplot(y_test, y_pred, mean_squared_error(y_test, y_pred), r2_score(y_test, y_pred), 'extra tree', target)
 
-
-	
-
 	# The mean squared error
 	importances = regr.feature_importances_
 	plot_importances(X, regr, importances, target, columns)
@@ -1163,7 +1161,7 @@ def chainregressor(X, Y):
 	for name, estimator in ESTIMATORS.items():
 		meansquared_error = []
 		r2score = []
-		estimator = RegressorChain(estimator, order = [0, 1])
+		estimator = RegressorChain(estimator, order = [0, 1, 2])
 		for train_index, test_index in kf.split(X):
 			X_train, X_test = X[train_index], X[test_index]
 			y_train, y_test = Y[train_index], Y[test_index]
@@ -1391,7 +1389,7 @@ def prediction():
 
 	# response_columns = ['SABLE', 'LIMON', 'ARGILE']
 	# response_columns = ['MVA', 'CONDHYD', 'DMP', 'POROTOT', 'MO']
-	response_columns = ['MVA', 'POROTOT1', 'POROTOT3', 'PORODRAI1', 'PORODRAI3', 'CH_cm_h', 'DMP' ] #DMP
+	response_columns = ['MVA', 'POROTOT1', 'POROTOT3', 'PORODRAI1', 'PORODRAI3', 'CH_cm_h'] #DMP
 	# response_columns=['MVA']
 	columns = ['PCMO', 'PM3', 'CEC', 'MNM3', 'CUM3'  ,'FEM3' ,'ALM3' ,'BM3'  ,'KM3'  ,'CAM3' ,'MGM3', 'ARGILE', 'SABLE', 'LIMON', 'CentreEp', 'PHSMP', 'PHEAU']
 	# columns = []
@@ -1450,188 +1448,202 @@ def prediction():
 		print(column, dfcouche2[column].skew())
 		print(column, dfcouche3[column].skew())
 
-	dfff = [0, 0 , 0]
-	dfff[0] =  dfcouche1
-	dfff[1] =  dfcouche2
-	dfff[2] =  dfcouche3
+	for responsee in response_columns:
+
+		dfff = [0, 0 , 0]
+		dfff[0] =  dfcouche1
+		dfff[1] =  dfcouche2[['IDEN2', responsee]]
+		dfff[2] =  dfcouche3[['IDEN2', responsee]]
 
 
 
 
 
-	plot_features(dfcouche1, columns, 'couche1')
-	plot_features(dfcouche2, columns, 'couche2')
-	plot_features(dfcouche3, columns, 'couche3')
+		plot_features(dfcouche1, columns, 'couche1')
+		plot_features(dfcouche2, columns, 'couche2')
+		plot_features(dfcouche3, columns, 'couche3')
 
 
 
-	print(dfcouche1['IDEN2'].count())
-	print(dfcouche1['IDEN2'].nunique())
+		print(dfcouche1['IDEN2'].count())
+		print(dfcouche1['IDEN2'].nunique())
 
-	print(dfcouche2['IDEN2'].count())
-	print(dfcouche2['IDEN2'].nunique())
+		print(dfcouche2['IDEN2'].count())
+		print(dfcouche2['IDEN2'].nunique())
 
-	print(dfcouche3['IDEN2'].count())
-	print(dfcouche3['IDEN2'].nunique())
-
-
-	df_ = dfcouche1.merge(dfcouche2[['IDEN2', 'MVA']], 'inner', on=['IDEN2'], suffixes=['_1', '_2'])
-	# df_ = dfcouche1.merge(dfcouche2['IDEN2', 'MVA'], 'inner', on=['IDEN2'], suffixes=['_2'])
-
-	MVA = [df_['MVA_1'], df_['MVA_2']]
-
-	print(df_['MVA_1'].count())
-	print(df_['MVA_2'].count())
-
-	print(df_['IDEN2'].nunique())
+		print(dfcouche3['IDEN2'].count())
+		print(dfcouche3['IDEN2'].nunique())
 
 
-	# np.save('X.npy', df[columns].to_numpy())
-	# np.save('y.npy', df['GROUPE.x'].to_numpy())
+		# df_ = dfcouche1.merge(dfcouche2[['IDEN2', 'MVA']], 'inner', on=['IDEN2'], suffixes=['_1', '_2'])
+		# df_ = dfcouche1.merge(dfcouche2['IDEN2', 'MVA'], 'inner', on=['IDEN2'], suffixes=['_2'])
 
-	
-	# raise Exception("stopppp!")
-	# correlation_matrix(df)
+		# MVA = [df_['MVA_1'], df_['MVA_2']]
 
-	# viz.main(df[columns], df['Couche'], [1,2,3], "couche")
-	# viz.main(df[columns], df['GROUPE.x'], [1,2,3], "group")
+		df_ = reduce(lambda  left,right: pd.merge(left,right,on=['IDEN2'],how='inner'), dfff)
+		# df_ = dfcouche1.merge(dfcouche2[['IDEN2', 'MVA']], 'inner', on=['IDEN2'], suffixes=['_1', '_2'])
+		# df_ = df_.merge(dfcouche3['IDEN2', 'MVA'], 'inner', on=['IDEN2'], suffixes=['_3'])
+		df_.rename ({responsee + '_x': responsee + '_1', responsee + '_y': responsee + '_2', responsee : responsee + '_3'}, axis=1, inplace=True)
 
-	
-	
-	# pd.set_option('display.max_columns', 500)
-	# pd.set_option('display.width', 1000)
-	# print(df[response_columns].describe())
-	# print(df.shape)
-	# plot_features(df, response_columns)
-	# df.dropna(inplace = True)
-	# print(df.describe())
-	
+		print(df_.columns)
+		# MVA = [df_['MVA_1'], df_['MVA_2'], df_['MVA_3']]
 
-	# mva = ['N', 'PHSMP', 'INDICE20', 'ALM3', 'KM3', 'CAM3', 'MOM3', 'MGM3', 'FEM3', 'CDM3', 'COM3', 'PM3', 'CUM3', 'BM3', 'CRM3', 'NAM3', 'MNM3', 'ZNM3', 'PBM3']
-	# condhyd= ['N', 'MOM3', 'MGM3', 'CAM3', 'BM3', 'KM3', 'INDICE20', 'PHSMP', 'ALM3', 'PM3', 'CUM3', 'FEM3', 'CRM3', 'NAM3', 'CDM3', 'ZNM3', 'PBM3', 'COM3', 'MNM3']
-	# dmp = ['PM3', 'N', 'MGM3', 'INDICE20', 'KM3', 'CAM3', 'BM3', 'ALM3', 'MOM3', 'CUM3', 'FEM3', 'PBM3', 'NAM3', 'PHSMP', 'CRM3', 'MNM3', 'ZNM3', 'CDM3', 'COM3']
-	# portot = ['PHSMP', 'N', 'ALM3', 'INDICE20', 'MOM3', 'KM3', 'CAM3', 'MGM3', 'CUM3', 'FEM3', 'COM3', 'CRM3', 'NAM3', 'PM3', 'BM3', 'CDM3', 'MNM3', 'ZNM3', 'PBM3']
-	# mo = ['N', 'INDICE20', 'PHSMP', 'KM3', 'MGM3', 'MOM3', 'COM3', 'CDM3', 'CUM3', 'FEM3', 'CRM3', 'ALM3', 'PM3', 'ZNM3', 'CAM3', 'BM3', 'MNM3', 'PBM3', 'NAM3']
-	
-	# selected_columns={'MVA': mva[0:6], 'CONDHYD': condhyd[0:6], 'DMP': dmp[0:6] , 'POROTOT': portot[0:6], 'MO': mo[0:6] }
-	
-	# try:
-	# 	columns.remove('N')
-	# 	columns.remove('INDICE20')
-	# 	columns.remove('PHSMP')
-	# except:
-	# 		pass
-	
-	results = []
-	summaryofdata = []
-	results.append(['layer', 'target', 'MSE', 'Rsquare'])
-	summaryofdata.append(['layer', 'target', 'mean', 'stdev', 'number'])
+		# print(df_['MVA_1'].count())
+		# print(df_['MVA_2'].count())
 
-	# response_columns = ['MVA_1', 'MVA_2']
-
-	
-	for response in response_columns:
-		dff = dfff.copy()
-		columns = cc
-		for i in range(3):
-			
-			
-			df1 = dff[i].copy()
-			#columns = selected_columns[response]
-			# break
-			# df = pd.read_excel('Tabi_ML.xlsx', usecols = columns + [response])
-			df = df1.copy()
-			# print(df.isnull().sum())
-
-			df.dropna(inplace = True, subset=[response])
-
-			# print(response + 'mean of the data:', statistics.mean(df[response].to_numpy())) #percentage
-			# print(response + 'standard deviation of the data:', statistics.stdev(df[response].to_numpy())) # percentage
-			# print('shape:', df.shape)
-			# summaryofdata.append(['layer' + str(i), response, statistics.mean(df[response].to_numpy()), statistics.stdev(df[response].to_numpy()), str(df.shape[0])])
-			# print(i)
-			# print(df.columns)
-				
-			X = df[columns].to_numpy()
-			print(X.shape)
-
-			#do pca first
-			#dim = 6
-			#X = PCA(dim).fit(X).transform(X)
-
-			#scaler = MinMaxScaler().fit(X)
-			#X = scaler.transform(X)
-
-			Y = df[response].to_numpy()
-			# Y = df[response_columns].to_numpy()
-			# print(Y.shape)
+		# print(df_['IDEN2'].nunique())
 
 
+		# np.save('X.npy', df[columns].to_numpy())
+		# np.save('y.npy', df['GROUPE.x'].to_numpy())
 
-			'''scaler =  MinMaxScaler().fit(Y)
-			Y = scaler.transform(Y)'''
-			# impute(X, Y, response)
+		
+		# raise Exception("stopppp!")
+		# correlation_matrix(df)
 
-			# for column in columns:
-			# 	df[column].fillna((df[column].mean()), inplace=True)
+		# viz.main(df[columns], df['Couche'], [1,2,3], "couche")
+		# viz.main(df[columns], df['GROUPE.x'], [1,2,3], "group")
+
+		
+		
+		# pd.set_option('display.max_columns', 500)
+		# pd.set_option('display.width', 1000)
+		# print(df[response_columns].describe())
+		# print(df.shape)
+		# plot_features(df, response_columns)
+		# df.dropna(inplace = True)
+		# print(df.describe())
+		
+
+		# mva = ['N', 'PHSMP', 'INDICE20', 'ALM3', 'KM3', 'CAM3', 'MOM3', 'MGM3', 'FEM3', 'CDM3', 'COM3', 'PM3', 'CUM3', 'BM3', 'CRM3', 'NAM3', 'MNM3', 'ZNM3', 'PBM3']
+		# condhyd= ['N', 'MOM3', 'MGM3', 'CAM3', 'BM3', 'KM3', 'INDICE20', 'PHSMP', 'ALM3', 'PM3', 'CUM3', 'FEM3', 'CRM3', 'NAM3', 'CDM3', 'ZNM3', 'PBM3', 'COM3', 'MNM3']
+		# dmp = ['PM3', 'N', 'MGM3', 'INDICE20', 'KM3', 'CAM3', 'BM3', 'ALM3', 'MOM3', 'CUM3', 'FEM3', 'PBM3', 'NAM3', 'PHSMP', 'CRM3', 'MNM3', 'ZNM3', 'CDM3', 'COM3']
+		# portot = ['PHSMP', 'N', 'ALM3', 'INDICE20', 'MOM3', 'KM3', 'CAM3', 'MGM3', 'CUM3', 'FEM3', 'COM3', 'CRM3', 'NAM3', 'PM3', 'BM3', 'CDM3', 'MNM3', 'ZNM3', 'PBM3']
+		# mo = ['N', 'INDICE20', 'PHSMP', 'KM3', 'MGM3', 'MOM3', 'COM3', 'CDM3', 'CUM3', 'FEM3', 'CRM3', 'ALM3', 'PM3', 'ZNM3', 'CAM3', 'BM3', 'MNM3', 'PBM3', 'NAM3']
+		
+		# selected_columns={'MVA': mva[0:6], 'CONDHYD': condhyd[0:6], 'DMP': dmp[0:6] , 'POROTOT': portot[0:6], 'MO': mo[0:6] }
+		
+		# try:
+		# 	columns.remove('N')
+		# 	columns.remove('INDICE20')
+		# 	columns.remove('PHSMP')
+		# except:
+		# 		pass
+		
+		results = []
+		summaryofdata = []
+		results.append(['layer', 'target', 'MSE', 'Rsquare'])
+		summaryofdata.append(['layer', 'target', 'mean', 'stdev', 'number'])
+
+		response_columns_0 = [responsee + '_1', responsee + '_2', responsee + '_3']
+
+		
+		for response in response_columns_0:
+			dff = dfff.copy()
+			columns = cc
+			for i in range(3):
+				df1 = dff[i].copy()
+				#columns = selected_columns[response]
+				# break
+				# df = pd.read_excel('Tabi_ML.xlsx', usecols = columns + [response])
+				df = df_.copy()
+				# print(df.isnull().sum())
+
+				df.dropna(inplace = True, subset=[response])
+
+				# print(response + 'mean of the data:', statistics.mean(df[response].to_numpy())) #percentage
+				# print(response + 'standard deviation of the data:', statistics.stdev(df[response].to_numpy())) # percentage
+				# print('shape:', df.shape)
+				# summaryofdata.append(['layer' + str(i), response, statistics.mean(df[response].to_numpy()), statistics.stdev(df[response].to_numpy()), str(df.shape[0])])
+				# print(i)
+				# print(df.columns)
+					
+				X = df[columns].to_numpy()
+				print(X.shape)
+
+				#do pca first
+				#dim = 6
+				#X = PCA(dim).fit(X).transform(X)
+
+				#scaler = MinMaxScaler().fit(X)
+				#X = scaler.transform(X)
+
+				Y = df[response].to_numpy()
+				# Y = df[response_columns].to_numpy()
+				# print(Y.shape)
 
 
-			# X = df[columns].to_numpy()
-			mpl.rcParams.update(mpl.rcParamsDefault)
-			# feature_selection_regression (df[columns], df[response], df, 10, response)
-			# dimensionality_reduction_f_regression(X, Y, response)
-			# rfeecv(X, Y, response)
-			# xgboost_regression(X, Y , response, columns)
+
+				'''scaler =  MinMaxScaler().fit(Y)
+				Y = scaler.transform(Y)'''
+				# impute(X, Y, response)
+
+				for column in columns:
+					df[column].fillna((df[column].mean()), inplace=True)
 
 
-			# pr, error, rsquare  = linear_Regression(X , Y, response)
-			# results.append(['layer' + str(i), response, str(error) , str(rsquare), 'Linear Regression'])
+				# X = df[columns].to_numpy()
+				mpl.rcParams.update(mpl.rcParamsDefault)
+				# feature_selection_regression (df[columns], df[response], df, 10, response)
+				# dimensionality_reduction_f_regression(X, Y, response)
+				# rfeecv(X, Y, response)
+				# xgboost_regression(X, Y , response, columns)
 
 
-			# dFR(X , Y, response)
-			# aDFR(X ,Y, response)
-			# knnn(X ,Y, response)
+				pr, error, rsquare  = linear_Regression(X , Y, response)
+				print(response, error, rsquare)
+				results.append(['layer' + str(i), response, str(error) , str(rsquare), 'Linear Regression'])
 
 
-			prediction, error, rsquare  = extratree(X ,Y, response, columns)
-			results.append(['layer' + str(i), response, str(error) , str(rsquare), 'ExtraTrees'])
+				# dFR(X , Y, response)
+				# aDFR(X ,Y, response)
+				# knnn(X ,Y, response)
 
 
-			# svreg(X ,Y, response)
-			# neauralnetwork_regression(X , Y, response)
+				prediction, error, rsquare  = extratree(X ,Y, response, columns)
+				print(response, error, rsquare)
+				results.append(['layer' + str(i), response, str(error) , str(rsquare), 'ExtraTrees'])
 
 
-			# prediction, error, rsquare = nrp.regression(X , Y, response)
-			# results.append(['layer' + str(i), response, str(error) , str(rsquare), 'Neural Netwrok'])
-
-			# print(prediction.shape)
-			pred = pd.DataFrame(prediction.flatten() , columns=[response + str(i)] )
-			pred['IDEN2'] = df['IDEN2'].to_numpy()
-
-			# pr, error, rsquare  = multioutputregression_wrapper(df[columns].to_numpy() ,df[response_columns].to_numpy())
-			# results.append(['layer', response_columns, str(error) , str(rsquare), 'ExtraTrees'])
+				# svreg(X ,Y, response)
+				# neauralnetwork_regression(X , Y, response)
 
 
-			# results.append(['layer' + str(i), response, , 'Rsquare']).
+				prediction, error, rsquare = nrp.regression(X , Y, response)
+				print(response, error, rsquare)
+				results.append(['layer' + str(i), response, str(error) , str(rsquare), 'Neural Netwrok'])
+
+				# print(prediction.shape)
+				pred = pd.DataFrame(prediction.flatten() , columns=[response + str(i)] )
+				pred['IDEN2'] = df['IDEN2'].to_numpy()
+
+				# response_columns = ['MVA_1', 'MVA_2']
+		df = df_.copy()
+		df.dropna(inplace = True, subset=response_columns_0)
+		pr, error, rsquare  = multioutputregression_wrapper(df[columns].to_numpy() ,df[response_columns_0].to_numpy())
+		# results.append(['layer', response_columns, str(error) , str(rsquare), 'ExtraTrees'])
 
 
-			# prediction, error, rsquare  = mnr.regression(df[columns].to_numpy() ,df[response_columns].to_numpy())
-
-			# results.append(['layer', response_columns, str(error) , str(rsquare), 'Neural Netwrok'])
+		# results.append(['layer' + str(i), response, , 'Rsquare']).
 
 
-			# chainregressor(df[columns].to_numpy() ,df[response_columns].to_numpy())
-			
-			# print(prediction.shape)
-			# pred = pd.DataFrame(prediction , columns=[response + str(i) for response in response_columns] )
-			# pred['IDEN2'] = df['IDEN2'].to_numpy()
+		prediction, error, rsquare  = mnr.regression(df[columns].to_numpy() ,df[response_columns_0].to_numpy())
 
-			if i+1 < 3:
-				df_ = df.merge( pred, 'outer').reindex()
-				dff[i+1] = df_.copy()
-				print(dff[i+1].columns)
-				# columns = columns + [response + str(i) for response in response_columns]
-				columns = columns + [response + str(i)]
+		# results.append(['layer', response_columns, str(error) , str(rsquare), 'Neural Netwrok'])
+
+
+		chainregressor(df[columns].to_numpy() ,df[response_columns_0].to_numpy())
+		
+		# print(prediction.shape)
+		# pred = pd.DataFrame(prediction , columns=[response + str(i) for response in response_columns] )
+		# pred['IDEN2'] = df['IDEN2'].to_numpy()
+
+		# if i+1 < 3:
+		# 	df_ = df.merge( pred, 'outer').reindex()
+		# 	dff[i+1] = df_.copy()
+		# 	print(dff[i+1].columns)
+		# 	# columns = columns + [response + str(i) for response in response_columns]
+		# 	columns = columns + [response + str(i)]
 
 
 	with open('results.csv', 'w') as myfile:
