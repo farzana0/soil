@@ -9,22 +9,21 @@ from torch_geometric.data import DataLoader
 from torch_geometric.data import InMemoryDataset
 
 
-
 def dataloader():
 	G = nx.read_gpickle("spatial_graph.gpickle") 
 	data = from_networkx(G)
-	print('here')
-	print(data.num_nodes)
-	print(data.num_edges)
-	print(data.num_node_features)
-	print(data)
+	# print('here')
+	# print(data.num_nodes)
+	# print(data.num_edges)
+	# print(data.num_node_features)
+	# print(data)
 	# print(data['x'])
 	# print(data['y'])
 	return data, G
 
 def add_features_(data, G):
-	response_columns = ['MVA', 'POROTOT1', 'POROTOT3', 'PORODRAI1', 'PORODRAI3', 'CH_cm_h', 'DMP' ] #DMP
-	# response_columns=['MVA']
+	# response_columns = ['MVA', 'POROTOT1', 'POROTOT3', 'PORODRAI1', 'PORODRAI3', 'CH_cm_h', 'DMP' ] #DMP
+	response_columns=['MVA']
 	columns = ['PCMO', 'PM3', 'CEC', 'MNM3', 'CUM3'  ,'FEM3' ,'ALM3' ,'BM3'  ,'KM3'  ,'CAM3' ,'MGM3', 'ARGILE', 'SABLE', 'LIMON', 'CentreEp', 'PHSMP', 'PHEAU']
 	# columns = []
 	
@@ -68,6 +67,7 @@ def add_features_(data, G):
 
 	for column in response_columns:
 		df[column].fillna((df[column].mean()), inplace=True)
+		df[column] = (df[column] - df[column].mean())/ df[column].std()
 	
 
 	dfcouche1 = df[df['Couche'] == 1]
@@ -75,11 +75,13 @@ def add_features_(data, G):
 	df = dfcouche1
 	x_features = torch.tensor(df[columns].to_numpy()[list(G.nodes()), :], dtype = torch.float)
 	y_targets = torch.tensor(df[response_columns].to_numpy()[list(G.nodes()), :], dtype = torch.float)
+	positions = torch.tensor(df[['xcoord', 'ycoord']].to_numpy()[list(G.nodes()), :], dtype = torch.float)
 
 	data['x'] = x_features
 	data['y'] = y_targets
-	print(data['x'])
-	print(data['y'])
+	data['pos'] = positions
+	# print(data['x'])
+	# print(data['y'])
 	return data
 
 data, G = dataloader()
