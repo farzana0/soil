@@ -6,5 +6,5 @@ Coreg (knn regression ssl), semi-supervsed (autoencoder code for semisupervised 
 
 Imputer --> handling missing data
 
-GCN, graph construction, graphconst --> graph neural network models for graph construction of spatial data
+GCN, graph construction from spatial data --> graph neural network models for graph construction of spatial data
 
