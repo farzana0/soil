@@ -9,6 +9,7 @@ from torch_geometric.data import DataLoader
 from torch_geometric.data import InMemoryDataset
 
 
+
 def dataloader():
 	G = nx.read_gpickle("spatial_graph.gpickle") 
 	data = from_networkx(G)
@@ -75,11 +76,9 @@ def add_features_(data, G):
 	df = dfcouche1
 	x_features = torch.tensor(df[columns].to_numpy()[list(G.nodes()), :], dtype = torch.float)
 	y_targets = torch.tensor(df[response_columns].to_numpy()[list(G.nodes()), :], dtype = torch.float)
-	positions = torch.tensor(df[['xcoord', 'ycoord']].to_numpy()[list(G.nodes()), :], dtype = torch.float)
 
 	data['x'] = x_features
 	data['y'] = y_targets
-	data['pos'] = positions
 	# print(data['x'])
 	# print(data['y'])
 	return data

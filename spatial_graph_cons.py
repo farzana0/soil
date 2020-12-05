@@ -64,7 +64,7 @@ centroids = np.column_stack([dfx, dfy])
 print(dfx.shape)
 print(dfy.shape)
 # We define the range
-radius=10000
+radius=600
 # Like in the previous example we populate the KD-tree
 kdtree = spatial.cKDTree(centroids)
 neigh_list = {}
