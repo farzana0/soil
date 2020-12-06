@@ -80,7 +80,7 @@ def impute(X_full, y_full, param):
         keys=['Original', 'SimpleImputer', 'IterativeImputer'], axis=1
     )
 
-    # plot boston results
+    # plot results
     fig, ax = plt.subplots(figsize=(13, 6))
     means = -scores.mean()
     errors = scores.std()
